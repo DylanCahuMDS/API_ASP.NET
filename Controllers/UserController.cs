@@ -89,16 +89,32 @@ namespace APIMDS.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<User>> UpdateUser(int id, User user)
+        public async Task<ActionResult<User>> UpdateUser(int id, Dictionary<string, string> userData)
         {
-            if (id != user.Id)
-                return BadRequest();
-
             var existingUser = await _userRepository.GetUserById(id);
             if (existingUser == null)
                 return NotFound();
 
-            var updatedUser = await _userRepository.UpdateUser(user);
+            if (userData.ContainsKey("username"))
+            {
+                // Check if the new username is already taken
+                var newUsername = userData["username"];
+                if (await _userRepository.GetUserByUsername(newUsername) != null)
+                {
+                    return BadRequest("Username is already taken");
+                }
+
+                existingUser.Username = newUsername;
+            }
+
+            if (userData.ContainsKey("password"))
+            {
+                // Hash the new password
+                var newPassword = userData["password"];
+                existingUser.Password = HashPassword(newPassword);
+            }
+
+            var updatedUser = await _userRepository.UpdateUser(existingUser);
             return Ok(updatedUser);
         }
 
