@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Pomelo.EntityFrameworkCore.MySql;
 using MySqlConnector;
+using Microsoft.Extensions.Configuration;
 
 
 namespace APIMDS

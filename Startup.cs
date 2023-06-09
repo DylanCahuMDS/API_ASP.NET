@@ -7,6 +7,10 @@ using Microsoft.Extensions.Hosting;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using MySqlConnector;
 using Pomelo.EntityFrameworkCore.MySql;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+
 
 
 namespace APIMDS
@@ -46,6 +50,43 @@ namespace APIMDS
             {
                 // app.UseHsts();
             }
+
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Method == "POST" && context.Request.Path.StartsWithSegments("/users/login") ||context.Request.Method == "POST" && context.Request.Path.StartsWithSegments("/users"))
+                {
+                    await next.Invoke();
+                }
+                else
+                {
+                    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                    if (token == null)
+                    {
+                        context.Response.StatusCode = 401; // Unauthorized
+                        return;
+                    }
+
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.ASCII.GetBytes(_configuration.GetValue<string>("Jwt:SecretKey"));
+                    try
+                    {
+                        tokenHandler.ValidateToken(token, new TokenValidationParameters
+                        {
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(key),
+                            ValidateIssuer = false,
+                            ValidateAudience = false,
+                            ClockSkew = TimeSpan.Zero
+                        }, out SecurityToken validatedToken);
+
+                        await next.Invoke();
+                    }
+                    catch
+                    {
+                        context.Response.StatusCode = 401; // Unauthorized
+                    }
+                }
+            });
 
             app.UseRouting();
 

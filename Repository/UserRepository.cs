@@ -9,6 +9,8 @@ namespace APIMDS
         Task<User> CreateUser(User user);
         Task<User> UpdateUser(User user);
         Task<bool> DeleteUser(int id);
+        Task<User> GetUserByUsername(string username);
+
     }
 
     public class UserRepository : IUserRepository
@@ -30,13 +32,18 @@ namespace APIMDS
             return await _dbContext.Users.FindAsync(id);
         }
 
+        public async Task<User> GetUserByUsername(string username)
+        {
+            return await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+        }
+
         public async Task<User> CreateUser(User user)
         {
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
             return user;
         }
-        
+
         public async Task<User> UpdateUser(User user)
         {
             _dbContext.Entry(user).State = EntityState.Modified;
@@ -51,6 +58,8 @@ namespace APIMDS
             await _dbContext.SaveChangesAsync();
             return true;
         }
+
+        
     }
 
 }
